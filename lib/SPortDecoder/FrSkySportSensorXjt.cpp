@@ -6,156 +6,177 @@
   Note that this special sensor class can only be used for decoding.
 */
 
-#include "FrSkySportSensorXjt.h" 
+#include "FrSkySportSensorXjt.h"
 
-FrSkySportSensorXjt::FrSkySportSensorXjt(SensorId id) : FrSkySportSensor(id) { }
+FrSkySportSensorXjt::FrSkySportSensorXjt(SensorId id) : FrSkySportSensor(id) {}
 
 uint16_t FrSkySportSensorXjt::decodeData(uint8_t id, uint16_t appId, uint32_t data)
 {
-  if((sensorId == id) || (sensorId == FrSkySportSensor::ID_IGNORE))
+  if ((sensorId == id) || (sensorId == FrSkySportSensor::ID_IGNORE))
   {
-    switch(appId)
+    switch (appId)
     {
-      case 0xF101:
-        rssi = (uint8_t)data;
-        return appId;
-      case 0xF102:
-        adc1 = ((uint8_t)data) * (3.3 / 255.0);
-        return appId;
-      case 0xF103:
-        adc2 = ((uint8_t)data) * (3.3 / 255.0);
-        return appId;
-      case 0xF104:
-        rxBatt = ((uint8_t)data) * (3.3 / 255.0) * 4.0;
-        return appId;
-      case 0xF105:
-        swr = (uint8_t)data;
-        return appId;
-      case 0x0028:
-        current = data / 10.0;
-        return appId;
-      case 0x003A:
-        voltBD = data;
-        break;
-      case 0x003B:
-        // DEVIATION FROM SPEC: FrSky protocol spec suggests 0.5 ratio, but in reality this ratio is 0.5238 (based on the information from internet).
-        voltAD = data;
-        voltage = (voltAD / 10.0 + voltBD);
-        voltage /= 0.5238;
-        return appId;
-      case 0x0004:
-        fuel = data;
-        return appId;
-      case 0x0006:
-        // DEVIATION FROM SPEC: in reality cells are numbered from 0 not from 1 like in the FrSky protocol spec
-        if((data & 0xF000) == 0x0000) cell[0]  = (data & 0x0FFF) / 500.0; 
-        if((data & 0xF000) == 0x1000) cell[1]  = (data & 0x0FFF) / 500.0; 
-        if((data & 0xF000) == 0x2000) cell[2]  = (data & 0x0FFF) / 500.0; 
-        if((data & 0xF000) == 0x3000) cell[3]  = (data & 0x0FFF) / 500.0; 
-        if((data & 0xF000) == 0x4000) cell[4]  = (data & 0x0FFF) / 500.0; 
-        if((data & 0xF000) == 0x5000) cell[5]  = (data & 0x0FFF) / 500.0; 
-        if((data & 0xF000) == 0x6000) cell[6]  = (data & 0x0FFF) / 500.0; 
-        if((data & 0xF000) == 0x7000) cell[7]  = (data & 0x0FFF) / 500.0; 
-        if((data & 0xF000) == 0x8000) cell[8]  = (data & 0x0FFF) / 500.0; 
-        if((data & 0xF000) == 0x9000) cell[9]  = (data & 0x0FFF) / 500.0; 
-        if((data & 0xF000) == 0xA000) cell[10] = (data & 0x0FFF) / 500.0; 
-        if((data & 0xF000) == 0xB000) cell[11] = (data & 0x0FFF) / 500.0; 
-        return appId;
-      case 0x0010:
-        altBD = (int16_t)data;
-        break;
-      case 0x0021:
-        altAD = data;
-        altitude = altBD + altAD / 100.0;
-        return appId;
-      case 0x0030:
-        // DEVIATION FROM SPEC: Not documented in FrSky spec, added based on OpenTX sources.
-        vsi = data / 100.0;
-        return appId;
-      case 0x0001:
-        gpsAltBD = (int16_t)data;
-        break;
-      case 0x0009:
-        gpsAltAD = (int16_t)data;  
-        gpsAltitude = gpsAltBD + gpsAltAD / 100.0;
-        return appId;
-      case 0x0011:
-        speedBD = data;
-        break;
-      case 0x0019:
-        speedAD = data;  
-        speed = speedBD + speedAD / 100.0;
-        speed *= 0.51444; // Convert knots to m/s
-        return appId;
-      case 0x0012:
-        // DEVIATION FROM SPEC: FrSky protocol spec says lat shall be sent as big endian, but it reality little endian is sent
-        lonBD = data;
-        break;
-      case 0x001A:
-        // DEVIATION FROM SPEC: FrSky protocol spec says lat shall be sent as big endian, but it reality little endian is sent
-        lonAD = data;
-        break;
-      case 0x0022: 
-        lonEW = (char)data;
-        if(lonEW == 'W') lon = -((uint16_t)(lonBD / 100) + ((lonBD % 100) + (lonAD / 10000.0)) / 60.0);
-        else if(lonEW == 'E') lon = (uint16_t)(lonBD / 100) + ((lonBD % 100) + (lonAD / 10000.0)) / 60.0;
-        else lon = 0;
-        return appId;
-      case 0x0013:
-        // DEVIATION FROM SPEC: FrSky protocol spec says lat shall be sent as big endian, but it reality little endian is sent
-        latBD = data;
-        break;
-      case 0x001B:
-        // DEVIATION FROM SPEC: FrSky protocol spec says lat shall be sent as big endian, but it reality little endian is sent
-        latAD = data;
-        break;
-      case 0x0023:
-        latNS = (char)data;
-        if(latNS == 'S') lat = -((uint16_t)(latBD / 100) + ((latBD % 100) + (latAD / 10000.0)) / 60.0);
-        else if(latNS == 'N') lat = (uint16_t)(latBD / 100) + ((latBD % 100) + (latAD / 10000.0)) / 60.0;
-        else lat = 0;
-        return appId;
-      case 0x0014:
-        cogBD = data; 
-        break;
-      case 0x001C:
-        cogAD = data;
-        cog = cogBD + cogAD / 100.0;
-        return appId;
-      case 0x0015:
-        day = data & 0x00FF; data >>= 8;
-        month = data & 0x00FF;
-        break;
-      case 0x0016:
-        year = data;
-        return appId;
-      case 0x0017:
-        hour = data & 0x00FF; data >>= 8;
-        minute = data & 0x00FF;
-        break;
-      case 0x0018:
-        second = data;  
-        return appId;
-      case 0x0024:
-        accX = ((int16_t)data) / 1000.0;  
-        return appId;
-      case 0x0025:
-        accY = ((int16_t)data) / 1000.0;  
-        return appId;
-      case 0x0026:
-        accZ = ((int16_t)data) / 1000.0;  
-        return appId;
-      case 0x0002:
-        t1 = (int16_t)data;  
-        return appId;
-      case 0x0005:
-        t2 = (int16_t)data;
-        return appId;
-      case 0x0003:
-        rpm = data * 30.0;
-        return appId;
+    case 0xf101:
+      rssi = (uint8_t)data;
+      return appId;
+    case 0xF102:
+      adc1 = ((uint8_t)data) * (3.3 / 255.0);
+      return appId;
+    case 0xF103:
+      adc2 = ((uint8_t)data) * (3.3 / 255.0);
+      return appId;
+    case 0xF104:
+      rxBatt = ((uint8_t)data) * (3.3 / 255.0) * 4.0;
+      return appId;
+    case 0xF105:
+      swr = (uint8_t)data;
+      return appId;
+    case 0x0028:
+      current = data / 10.0;
+      return appId;
+    case 0x003A:
+      voltBD = data;
+      break;
+    case 0x003B:
+      // DEVIATION FROM SPEC: FrSky protocol spec suggests 0.5 ratio, but in reality this ratio is 0.5238 (based on the information from internet).
+      voltAD = data;
+      voltage = (voltAD / 10.0 + voltBD);
+      voltage /= 0.5238;
+      return appId;
+    case 0x0004:
+      fuel = data;
+      return appId;
+    case 0x0006:
+      // DEVIATION FROM SPEC: in reality cells are numbered from 0 not from 1 like in the FrSky protocol spec
+      if ((data & 0xF000) == 0x0000)
+        cell[0] = (data & 0x0FFF) / 500.0;
+      if ((data & 0xF000) == 0x1000)
+        cell[1] = (data & 0x0FFF) / 500.0;
+      if ((data & 0xF000) == 0x2000)
+        cell[2] = (data & 0x0FFF) / 500.0;
+      if ((data & 0xF000) == 0x3000)
+        cell[3] = (data & 0x0FFF) / 500.0;
+      if ((data & 0xF000) == 0x4000)
+        cell[4] = (data & 0x0FFF) / 500.0;
+      if ((data & 0xF000) == 0x5000)
+        cell[5] = (data & 0x0FFF) / 500.0;
+      if ((data & 0xF000) == 0x6000)
+        cell[6] = (data & 0x0FFF) / 500.0;
+      if ((data & 0xF000) == 0x7000)
+        cell[7] = (data & 0x0FFF) / 500.0;
+      if ((data & 0xF000) == 0x8000)
+        cell[8] = (data & 0x0FFF) / 500.0;
+      if ((data & 0xF000) == 0x9000)
+        cell[9] = (data & 0x0FFF) / 500.0;
+      if ((data & 0xF000) == 0xA000)
+        cell[10] = (data & 0x0FFF) / 500.0;
+      if ((data & 0xF000) == 0xB000)
+        cell[11] = (data & 0x0FFF) / 500.0;
+      return appId;
+    case 0x0010:
+      altBD = (int16_t)data;
+      break;
+    case 0x0021:
+      altAD = data;
+      altitude = altBD + altAD / 100.0;
+      return appId;
+    case 0x0030:
+      // DEVIATION FROM SPEC: Not documented in FrSky spec, added based on OpenTX sources.
+      vsi = data / 100.0;
+      return appId;
+    case 0x0001:
+      gpsAltBD = (int16_t)data;
+      break;
+    case 0x0009:
+      gpsAltAD = (int16_t)data;
+      gpsAltitude = gpsAltBD + gpsAltAD / 100.0;
+      return appId;
+    case 0x0011:
+      speedBD = data;
+      break;
+    case 0x0019:
+      speedAD = data;
+      speed = speedBD + speedAD / 100.0;
+      speed *= 0.51444; // Convert knots to m/s
+      return appId;
+    case 0x0012:
+      // DEVIATION FROM SPEC: FrSky protocol spec says lat shall be sent as big endian, but it reality little endian is sent
+      lonBD = data;
+      break;
+    case 0x001A:
+      // DEVIATION FROM SPEC: FrSky protocol spec says lat shall be sent as big endian, but it reality little endian is sent
+      lonAD = data;
+      break;
+    case 0x0022:
+      lonEW = (char)data;
+      if (lonEW == 'W')
+        lon = -((uint16_t)(lonBD / 100) + ((lonBD % 100) + (lonAD / 10000.0)) / 60.0);
+      else if (lonEW == 'E')
+        lon = (uint16_t)(lonBD / 100) + ((lonBD % 100) + (lonAD / 10000.0)) / 60.0;
+      else
+        lon = 0;
+      return appId;
+    case 0x0013:
+      // DEVIATION FROM SPEC: FrSky protocol spec says lat shall be sent as big endian, but it reality little endian is sent
+      latBD = data;
+      break;
+    case 0x001B:
+      // DEVIATION FROM SPEC: FrSky protocol spec says lat shall be sent as big endian, but it reality little endian is sent
+      latAD = data;
+      break;
+    case 0x0023:
+      latNS = (char)data;
+      if (latNS == 'S')
+        lat = -((uint16_t)(latBD / 100) + ((latBD % 100) + (latAD / 10000.0)) / 60.0);
+      else if (latNS == 'N')
+        lat = (uint16_t)(latBD / 100) + ((latBD % 100) + (latAD / 10000.0)) / 60.0;
+      else
+        lat = 0;
+      return appId;
+    case 0x0014:
+      cogBD = data;
+      break;
+    case 0x001C:
+      cogAD = data;
+      cog = cogBD + cogAD / 100.0;
+      return appId;
+    case 0x0015:
+      day = data & 0x00FF;
+      data >>= 8;
+      month = data & 0x00FF;
+      break;
+    case 0x0016:
+      year = data;
+      return appId;
+    case 0x0017:
+      hour = data & 0x00FF;
+      data >>= 8;
+      minute = data & 0x00FF;
+      break;
+    case 0x0018:
+      second = data;
+      return appId;
+    case 0x0024:
+      accX = ((int16_t)data) / 1000.0;
+      return appId;
+    case 0x0025:
+      accY = ((int16_t)data) / 1000.0;
+      return appId;
+    case 0x0026:
+      accZ = ((int16_t)data) / 1000.0;
+      return appId;
+    case 0x0002:
+      t1 = (int16_t)data;
+      return appId;
+    case 0x0005:
+      t2 = (int16_t)data;
+      return appId;
+    case 0x0003:
+      rpm = data * 30.0;
+      return appId;
     }
   }
+
   return SENSOR_NO_DATA_ID;
 }
 

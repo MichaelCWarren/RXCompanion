@@ -43,13 +43,13 @@ private:
     CRC_BYTE = 9
   };
   FrSkySportSensor *sensors[FRSKY_DECODER_MAX_SENSORS];
-  uint8_t sensorCount;
-  State state;
-  bool hasStuffing;
-  uint8_t id;
-  uint16_t appId;
-  uint32_t data;
-  uint16_t crc;
+  uint8_t sensorCount = 0;
+  State state = State::START_FRAME;
+  bool hasStuffing = false;
+  uint8_t id = 0;
+  uint16_t appId = 0;
+  uint32_t data = 0;
+  uint16_t crc = 0;
   uint16_t processByte(uint8_t byte);
 };
 

@@ -48,8 +48,8 @@ void PXXPacket::render()
     int CHAN_MAX = PXX_CHANNEL_WIDTH - 2;
 
     // Update the channels with the ppm values
-    int allChannels[16] = {1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000};
-    for (int c = 0; c < PPMREADER_PPM_CHANNEL_COUNT; c++)
+    int allChannels[16];
+    for (int c = 0; c < 16; c++)
     {
         allChannels[c] = PPMDecoder::shared->ppm[c];
     }
@@ -57,7 +57,9 @@ void PXXPacket::render()
     // PPM  //17
     for (int i = 0; i < 8; i++)
     {
-        int channelPPM = allChannels[(upperChannels ? (8 + i) : i)];
+        int channel = (upperChannels ? (8 + i) : i);
+        int channelPPM = allChannels[channel];
+        
         if (failsafe)
         {
             if (channelPPM == PXX_FAILSAFE_HOLD)

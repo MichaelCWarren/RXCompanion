@@ -9,11 +9,11 @@ public:
     static void init(int pin);
     FrSkySportSensorInav *inav;
     FrSkySportSensorXjt *xjt;
-
+FrSkySportDecoder *_decoder;
 private:
     SPortDecoder(int pin);
     static void pio_callback();
     int _pin;
     uint8_t _rxBuffer[256];
-    FrSkySportDecoder *_decoder;
+    
 };

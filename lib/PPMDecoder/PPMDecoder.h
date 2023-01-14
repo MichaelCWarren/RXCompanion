@@ -6,8 +6,8 @@ https://quadmeup.com
 License: GNU GPL v3
 */
 
-#ifndef PPMReader_h
-#define PPMReader_h
+#ifndef PPMDecoder_h
+#define PPMDecoder_h
 
 #include "pico/stdlib.h"
 
@@ -19,7 +19,7 @@ class PPMDecoder
 public:
 	static PPMDecoder *shared;
 	static void init(int pin, int addPinStart, int addPinCount);
-	int ppm[PPMREADER_PPM_CHANNEL_COUNT] = {1500, 1500, 1500, 1500, 1500, 1500, 1500 };
+	int ppm[16] = {1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500};
 	bool isReceiving(void);
 
 private:
@@ -27,7 +27,7 @@ private:
 	PPMDecoder(int pin, int addPinStart, int addPinCount);
 	int _pin;
 	int _addPinStart;
-	uint32_t lastPacketUpdate = 0; 
+	uint32_t lastPacketUpdate = 0;
 	void sync();
 };
 
