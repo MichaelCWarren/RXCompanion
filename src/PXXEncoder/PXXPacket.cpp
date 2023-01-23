@@ -1,5 +1,5 @@
 #include "PXXPacket.h"
-#include "PPMDecoder.h"
+#include "../PPMDecoder/PPMDecoder.h"
 #include "stdio.h"
 
 #define PPM_CENTER 1500

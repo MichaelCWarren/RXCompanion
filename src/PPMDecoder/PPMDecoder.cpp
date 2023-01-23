@@ -8,7 +8,7 @@ https://quadmeup.com
 License: GNU GPL v3
 */
 
-#include "PPMDecoder.h"
+#include "./PPMDecoder.h"
 
 #include "pico/stdlib.h"
 #include "stdio.h"

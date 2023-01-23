@@ -1,4 +1,14 @@
 #include "MessagingService.h"
+#include "PPMDecoder/PPMDecoder.h"
+#include "PXXEncoder/PXXEncoder.h"
+#include "Settings/Settings.h"
+#include "stdio.h"
+
+#define MESSAGEID_SET_TXID 0x01  //["txid", "bind?"]
+#define MESSAGEID_BIND 0x02      //[]
+#define MESSAGEID_STOPBIND 0x03  //[]
+#define MESSAGEID_RX_STATUS 0x04 //[txId, bind, channels]
+#define MESSAGEID_TEST 0x36
 
 MessagingService *MessagingService::shared;
 
@@ -19,8 +29,8 @@ void MessagingService::uart_callback()
 MessagingService::MessagingService(int rxPin, int txPin)
 {
     uart_init(UART_ID, BAUD_RATE);
-    gpio_set_function(rxPin, GPIO_FUNC_UART);
     gpio_set_function(txPin, GPIO_FUNC_UART);
+    gpio_set_function(rxPin, GPIO_FUNC_UART);
 
     uart_set_hw_flow(UART_ID, false, false);
     uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
@@ -30,6 +40,22 @@ MessagingService::MessagingService(int rxPin, int txPin)
 
     // Now enable the UART to send interrupts - RX only, we don't care when the TX FIFO is empty
     uart_set_irq_enables(UART_ID, true, false);
+
+    add_repeating_timer_ms(-250, timer_callback, NULL, &this->_timer);
+}
+
+bool MessagingService::timer_callback(repeating_timer_t *rt)
+{
+    uint16_t buffer[17];
+    buffer[0] = PXXEncoder::shared->channel << 8 | PXXEncoder::shared->bind;
+    for (int i = 0; i < 16; i++)
+    {
+        buffer[i + 1] = PPMDecoder::shared->ppm[i];
+    }
+
+    MessagingService::shared->sendMessage(MESSAGEID_RX_STATUS, (uint8_t *)buffer, 17 * 2);
+
+    return true;
 }
 
 void MessagingService::receivedData(uint8_t data)
@@ -54,7 +80,6 @@ void MessagingService::receivedData(uint8_t data)
         if (this->_offset == sizeof(header_t))
         {
             header_t *header = (header_t *)&this->_buffer[0];
-            // Check incoming buffer size limit
             if (header->size > BUFFER_SIZE)
             {
                 this->_state = IDLE;
@@ -69,6 +94,7 @@ void MessagingService::receivedData(uint8_t data)
         }
         break;
     case PAYLOAD:
+
         this->_buffer[this->_offset++] = data;
         this->_checksum ^= data;
         if (this->_offset == this->_size)
@@ -77,6 +103,7 @@ void MessagingService::receivedData(uint8_t data)
         }
         break;
     case CHECKSUM:
+
         if (this->_checksum == data)
         {
             this->_state = RECEIVED;
@@ -86,14 +113,21 @@ void MessagingService::receivedData(uint8_t data)
             this->_state = IDLE;
         }
         break;
-    case RECEIVED:
-        //Not sure what to do in this case, I think we need to go back to idle and deal with this byte
+
+    default:
         break;
     }
 
     if (this->_state == RECEIVED)
     {
         this->messageComplete();
+        this->_state = IDLE;
+    }
+
+    if (this->_state == IDLE)
+    {
+        this->_offset = 0;
+        this->_checksum = 0;
     }
 }
 
@@ -132,16 +166,13 @@ void MessagingService::sendMessage(uint8_t messageId, uint8_t *buffer, uint16_t 
     }
 }
 
-#define MESSAGEID_SET_TXID 0x01 //["txid", "bind?"]
-#define MESSAGEID_BIND 0x02     //[]
-#define MESSAGEID_STOPBIND 0x03 //[]
-
 void MessagingService::messageComplete()
 {
     switch (this->_message)
     {
     case MESSAGEID_SET_TXID:
         PXXEncoder::shared->channel = this->_buffer[0];
+        Settings::shared->channel = this->_buffer[0];
         if (this->_offset > 1 && this->_buffer[1] > 0)
         {
             PXXEncoder::shared->bind = true;
@@ -152,6 +183,8 @@ void MessagingService::messageComplete()
         break;
     case MESSAGEID_STOPBIND:
         PXXEncoder::shared->bind = false;
+        break;
+    case MESSAGEID_TEST:
         break;
     }
 }

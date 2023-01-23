@@ -143,7 +143,6 @@ uint16_t FrSkySportDecoder::processByte(uint8_t byte)
 		{														// If OK, send data to registered sensors for decoding and restart the state machine.
 			hasStuffing = false;
 			state = START_FRAME;
-			printf("id: %x, %x, %d \r\n", id, appId, data);
 			for (uint8_t i = 0; i < sensorCount; i++)
 			{
 				result = sensors[i]->decodeData(id, appId, data);

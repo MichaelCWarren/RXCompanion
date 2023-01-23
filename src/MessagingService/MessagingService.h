@@ -1,4 +1,4 @@
-#include "PXXEncoder.h"
+#include "../PXXEncoder/PXXEncoder.h"
 #include "hardware/uart.h"
 #include "memory.h"
 #include "pico/stdlib.h"
@@ -36,6 +36,7 @@ class MessagingService
 public:
     static MessagingService *shared;
     static void init(int rxPin, int txPin);
+    void sendMessage(uint8_t messageId, uint8_t *buffer, uint16_t size);
 
 private:
     uint8_t _buffer[BUFFER_SIZE];
@@ -44,11 +45,12 @@ private:
     uint8_t _checksum = 0;
     uint8_t _message = 0;
     uint16_t _size = 0;
+    repeating_timer_t _timer;
 
+    static bool timer_callback(repeating_timer_t *rt);
     MessagingService(int rxPin, int txPin);
     static void uart_callback();
     static uint8_t createChecksum(uint8_t checksum, const uint8_t *data, int len);
     void receivedData(uint8_t data);
     void messageComplete();
-    void sendMessage(uint8_t messageId, uint8_t *buffer, uint16_t size);
 };
