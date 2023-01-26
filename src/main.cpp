@@ -12,7 +12,7 @@
 #define PXX_PIN 1
 #define PPM_PIN 0
 #define SPORT_PIN 22
-#define PPM_ADD_PIN_START 12
+#define PPM_ADD_PIN_START 16
 #define PPM_ADD_PIN_COUNT 4
 #define MESSAGE_TX_PIN 4
 #define MESSAGE_RX_PIN 5
