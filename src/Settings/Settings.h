@@ -9,9 +9,10 @@ class Settings
 {
 public:
     static Settings *shared;
-    uint8_t channel = 16; //Default
+    unsigned char channel = 16; // Default
     static void init();
     void read();
+
 private:
     int getFirstEmptyPage();
     void save(bool format);

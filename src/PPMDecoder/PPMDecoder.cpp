@@ -75,12 +75,12 @@ void PPMDecoder::handler(uint gpio, uint32_t events)
     static unsigned int pulse;
     static unsigned long counter;
     static uint8_t channel;
-    static unsigned long previousCounter = 0;
-    static unsigned long currentMicros = 0;
+    static absolute_time_t previousCounter;
+    static absolute_time_t currentMicros;
     int tmpVal;
 
     currentMicros = get_absolute_time();
-    counter = currentMicros - previousCounter;
+    counter = absolute_time_diff_us(currentMicros, previousCounter);
     previousCounter = currentMicros;
     if (counter < 510)
     { // must be a pulse

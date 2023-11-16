@@ -1,0 +1,1 @@
+target_sources(TXCompanion PRIVATE PXXEncoder.cpp pxx.pio.h PXXPacket.cpp)
